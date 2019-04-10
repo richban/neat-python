@@ -103,6 +103,7 @@ class StdOutReporter(BaseReporter):
 
     def start_generation(self, generation, config, population, species_set):
         self.generation = generation
+
         print('\n ****** Running generation {0} ****** \n'.format(generation))
         report('\n ****** Running generation {0} ****** \n'.format(generation))
 
@@ -119,17 +120,22 @@ class StdOutReporter(BaseReporter):
         body = []
         ng = len(population)
         ns = len(species_set.species)
+
         if self.show_species_detail:
             print(
                 'Population of {0:d} members in {1:d} species:'.format(ng, ns))
             body.append(
                 'Population of {0:d} members in {1:d} species:\n'.format(ng, ns))
+
             sids = list(iterkeys(species_set.species))
             sids.sort()
+
             print("   ID   age  size  fitness  adj fit  stag")
             print("  ====  ===  ====  =======  =======  ====")
+
             body.append("   ID   age  size  fitness  adj fit  stag\n")
             body.append("  ====  ===  ====  =======  =======  ====\n")
+
             for sid in sids:
                 s = species_set.species[sid]
                 a = self.generation - s.created
@@ -152,8 +158,10 @@ class StdOutReporter(BaseReporter):
         self.generation_times.append(elapsed)
         self.generation_times = self.generation_times[-10:]
         average = sum(self.generation_times) / len(self.generation_times)
+
         print('Total extinctions: {0:d}'.format(self.num_extinctions))
         body.append('Total extinctions: {0:d}\n'.format(self.num_extinctions))
+
         if len(self.generation_times) > 1:
             print("Generation time: {0:.3f} sec ({1:.3f} average)".format(
                 elapsed, average))
@@ -191,8 +199,8 @@ class StdOutReporter(BaseReporter):
                                                                                        best_genome.size(),
                                                                                        best_species_id,
                                                                                        best_genome.key))
-        body.append('Population\'s average fitness: {0:3.5f} stdev: {1:3.5f}\n'.format(
-            fit_mean, fit_std))
+        body.append('Population\'s average fitness: {0:3.5f} stdev: {1:3.5f} median: {2:3.5f}\n'.format(
+            fit_mean, fit_std, fit_median))
         body.append(
             'Best fitness: {0:3.5f} - complexity: {1!r} - species {2} - id {3}\n'.format(best_genome.fitness,
                                                                                          best_genome.size(),
