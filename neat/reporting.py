@@ -9,7 +9,9 @@ import time
 
 from neat.math_util import mean, stdev
 from neat.six_util import itervalues, iterkeys
-
+from gmail import report
+from plot import plot_species_stagnation, plot_fitness_over_gen
+import os
 # TODO: Add a curses-based reporter.
 
 
@@ -27,9 +29,9 @@ class ReporterSet(object):
     def remove(self, reporter):
         self.reporters.remove(reporter)
 
-    def start_generation(self, gen):
+    def start_generation(self, gen, config, population, species_set):
         for r in self.reporters:
-            r.start_generation(gen)
+            r.start_generation(gen, config, population, species_set)
 
     def end_generation(self, config, population, species_set):
         for r in self.reporters:
@@ -62,7 +64,7 @@ class ReporterSet(object):
 
 class BaseReporter(object):
     """Definition of the reporter interface expected by ReporterSet."""
-    def start_generation(self, generation):
+    def start_generation(self, generation, config, population, species_set):
         pass
 
     def end_generation(self, config, population, species_set):
@@ -96,20 +98,33 @@ class StdOutReporter(BaseReporter):
         self.generation_times = []
         self.num_extinctions = 0
 
-    def start_generation(self, generation):
+    def start_generation(self, generation, config, population, species_set):
         self.generation = generation
         print('\n ****** Running generation {0} ****** \n'.format(generation))
+        report('\n ****** Running generation {0} ****** \n'.format(generation))
+
+        if not os.path.isfile('fitplot') or generation == 0:
+            with open('fitplot', 'w') as f:
+                pass
+
+        with open('fitplot', 'a') as f:
+            f.write('{},'.format(generation))
+
         self.generation_start_time = time.time()
 
     def end_generation(self, config, population, species_set):
+        body = []
         ng = len(population)
         ns = len(species_set.species)
         if self.show_species_detail:
             print('Population of {0:d} members in {1:d} species:'.format(ng, ns))
+            body.append('Population of {0:d} members in {1:d} species:\n'.format(ng, ns))
             sids = list(iterkeys(species_set.species))
             sids.sort()
             print("   ID   age  size  fitness  adj fit  stag")
             print("  ====  ===  ====  =======  =======  ====")
+            body.append("   ID   age  size  fitness  adj fit  stag\n")
+            body.append("  ====  ===  ====  =======  =======  ====\n")
             for sid in sids:
                 s = species_set.species[sid]
                 a = self.generation - s.created
@@ -119,31 +134,52 @@ class StdOutReporter(BaseReporter):
                 st = self.generation - s.last_improved
                 print(
                     "  {: >4}  {: >3}  {: >4}  {: >7}  {: >7}  {: >4}".format(sid, a, n, f, af, st))
+                body.append(
+                    "  {: >4}  {: >3}  {: >4}  {: >7}  {: >7}  {: >4}\n".format(sid, a, n, f, af, st))
         else:
             print('Population of {0:d} members in {1:d} species'.format(ng, ns))
+            body.append('Population of {0:d} members in {1:d} species\n'.format(ng, ns))
 
         elapsed = time.time() - self.generation_start_time
         self.generation_times.append(elapsed)
         self.generation_times = self.generation_times[-10:]
         average = sum(self.generation_times) / len(self.generation_times)
         print('Total extinctions: {0:d}'.format(self.num_extinctions))
+        body.append('Total extinctions: {0:d}\n'.format(self.num_extinctions))
         if len(self.generation_times) > 1:
             print("Generation time: {0:.3f} sec ({1:.3f} average)".format(elapsed, average))
+            body.append("Generation time: {0:.3f} sec ({1:.3f} average)\n".format(elapsed, average))
         else:
             print("Generation time: {0:.3f} sec".format(elapsed))
+            body.append("Generation time: {0:.3f} sec\n".format(elapsed))
+        if body:
+            img = plot_species_stagnation(body, 'species_plot.png')
+            report(body, img)
 
     def post_evaluate(self, config, population, species, best_genome):
         # pylint: disable=no-self-use
+        body = []
         fitnesses = [c.fitness for c in itervalues(population)]
         fit_mean = mean(fitnesses)
         fit_std = stdev(fitnesses)
         best_species_id = species.get_species_id(best_genome.key)
+        with open('fitplot', 'a') as f:
+            f.write('{},{},{}\n'.format(fit_mean, fit_std, best_genome.fitness))
         print('Population\'s average fitness: {0:3.5f} stdev: {1:3.5f}'.format(fit_mean, fit_std))
         print(
             'Best fitness: {0:3.5f} - size: {1!r} - species {2} - id {3}'.format(best_genome.fitness,
                                                                                  best_genome.size(),
                                                                                  best_species_id,
                                                                                  best_genome.key))
+        body.append('Population\'s average fitness: {0:3.5f} stdev: {1:3.5f}\n'.format(fit_mean, fit_std))
+        body.append(
+            'Best fitness: {0:3.5f} - size: {1!r} - species {2} - id {3}\n'.format(best_genome.fitness,
+                                                                                 best_genome.size(),
+                                                                                 best_species_id,
+                                                                                 best_genome.key))
+        if body:
+            img = plot_fitness_over_gen('fitplot', 'fitplot.png')
+            report(body, img)
 
     def complete_extinction(self):
         self.num_extinctions += 1
@@ -156,6 +192,7 @@ class StdOutReporter(BaseReporter):
     def species_stagnant(self, sid, species):
         if self.show_species_detail:
             print("\nSpecies {0} with {1} members is stagnated: removing it".format(sid, len(species.members)))
+            report("\nSpecies {0} with {1} members is stagnated: removing it".format(sid, len(species.members)))
 
     def info(self, msg):
         print(msg)

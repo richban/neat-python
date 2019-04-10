@@ -42,8 +42,6 @@ class Checkpointer(BaseReporter):
 
     def start_generation(self, generation):
         self.current_generation = generation
-
-    def end_generation(self, config, population, species_set):
         checkpoint_due = False
 
         if self.time_interval_seconds is not None:
@@ -60,6 +58,10 @@ class Checkpointer(BaseReporter):
             self.save_checkpoint(config, population, species_set, self.current_generation)
             self.last_generation_checkpoint = self.current_generation
             self.last_time_checkpoint = time.time()
+
+
+    def end_generation(self, config, population, species_set):
+        pass
 
     def save_checkpoint(self, config, population, species_set, generation):
         """ Save the current simulation state. """

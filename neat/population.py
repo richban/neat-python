@@ -60,17 +60,13 @@ class Population(object):
         """
         Runs NEAT's genetic algorithm for at most n generations.  If n
         is None, run until solution is found or extinction occurs.
-
         The user-provided fitness_function must take only two arguments:
             1. The population as a list of (genome id, genome) tuples.
             2. The current configuration object.
-
         The return value of the fitness function is ignored, but it must assign
         a Python float to the `fitness` member of each genome.
-
         The fitness function is free to maintain external state, perform
         evaluations in parallel, etc.
-
         It is assumed that fitness_function does not modify the list of genomes,
         the genomes themselves (apart from updating the fitness member),
         or the configuration object.
@@ -83,7 +79,7 @@ class Population(object):
         while n is None or k < n:
             k += 1
 
-            self.reporters.start_generation(self.generation)
+            self.reporters.start_generation(self.generation, self.config, self.population, self.species)
 
             # Evaluate all genomes using the user-provided function.
             fitness_function(list(iteritems(self.population)), self.config)
