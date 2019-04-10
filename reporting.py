@@ -7,10 +7,10 @@ from __future__ import division, print_function
 
 import time
 
-from neat.math_util import mean, stdev
+from neat.math_util import mean, stdev, median
 from neat.six_util import itervalues, iterkeys
 from utility.mail import report
-from utility.plot import plot_species_stagnation, plot_fitness_over_gen
+from utility.visualize import plot_species_stagnation, plot_fitness_over_gen
 import os
 # TODO: Add a curses-based reporter.
 
@@ -106,11 +106,11 @@ class StdOutReporter(BaseReporter):
         print('\n ****** Running generation {0} ****** \n'.format(generation))
         report('\n ****** Running generation {0} ****** \n'.format(generation))
 
-        if not os.path.isfile('fitplot') or generation == 0:
-            with open('fitplot', 'w') as f:
+        if not os.path.isfile('fitness_population') or generation == 0:
+            with open('fitness_population', 'w') as f:
                 pass
 
-        with open('fitplot', 'a') as f:
+        with open('fitness_population', 'a') as f:
             f.write('{},'.format(generation))
 
         self.generation_start_time = time.time()
@@ -167,30 +167,40 @@ class StdOutReporter(BaseReporter):
             report(body, img)
 
     def post_evaluate(self, config, population, species, best_genome):
-        # pylint: disable=no-self-use
         body = []
         fitnesses = [c.fitness for c in itervalues(population)]
         fit_mean = mean(fitnesses)
         fit_std = stdev(fitnesses)
+        fit_median = median(fitnesses)
         best_species_id = species.get_species_id(best_genome.key)
-        with open('fitplot', 'a') as f:
-            f.write('{},{},{}\n'.format(fit_mean, fit_std, best_genome.fitness))
-        print('Population\'s average fitness: {0:3.5f} stdev: {1:3.5f}'.format(
-            fit_mean, fit_std))
+
+        with open('fitness_population', 'a') as f:
+            f.write('{},{},{},{}\n'.format(
+                fit_mean, fit_std, best_genome.fitness, fit_median))
+
+        with open('fitness_generation_{}'.format(self.generation), 'a') as g:
+            for c in itervalues(population):
+                g.write('{0},{1},{2}\n'.format(
+                    self.generation, c.key, c.fitness))
+
+        print('Population\'s average fitness: {0:3.5f} stdev: {1:3.5f} median: {2:3.5f}'.format(
+            fit_mean, fit_std, fit_median))
+
         print(
-            'Best fitness: {0:3.5f} - size: {1!r} - species {2} - id {3}'.format(best_genome.fitness,
-                                                                                 best_genome.size(),
-                                                                                 best_species_id,
-                                                                                 best_genome.key))
+            'Best fitness: {0:3.5f} - complexity: {1!r} - species {2} - id {3}'.format(best_genome.fitness,
+                                                                                       best_genome.size(),
+                                                                                       best_species_id,
+                                                                                       best_genome.key))
         body.append('Population\'s average fitness: {0:3.5f} stdev: {1:3.5f}\n'.format(
             fit_mean, fit_std))
         body.append(
-            'Best fitness: {0:3.5f} - size: {1!r} - species {2} - id {3}\n'.format(best_genome.fitness,
-                                                                                   best_genome.size(),
-                                                                                   best_species_id,
-                                                                                   best_genome.key))
+            'Best fitness: {0:3.5f} - complexity: {1!r} - species {2} - id {3}\n'.format(best_genome.fitness,
+                                                                                         best_genome.size(),
+                                                                                         best_species_id,
+                                                                                         best_genome.key))
         if body:
-            img = plot_fitness_over_gen('fitplot', 'fitplot.png')
+            img = plot_fitness_over_gen(
+                'fitness_population', 'fitness_population.png')
             report(body, img)
 
     def complete_extinction(self):
