@@ -9,8 +9,8 @@ import time
 
 from neat.math_util import mean, stdev
 from neat.six_util import itervalues, iterkeys
-from gmail import report
-from plot import plot_species_stagnation, plot_fitness_over_gen
+from utility.mail import report
+from utility.plot import plot_species_stagnation, plot_fitness_over_gen
 import os
 # TODO: Add a curses-based reporter.
 
@@ -20,6 +20,7 @@ class ReporterSet(object):
     Keeps track of the set of reporters
     and gives methods to dispatch them at appropriate points.
     """
+
     def __init__(self):
         self.reporters = []
 
@@ -64,6 +65,7 @@ class ReporterSet(object):
 
 class BaseReporter(object):
     """Definition of the reporter interface expected by ReporterSet."""
+
     def start_generation(self, generation, config, population, species_set):
         pass
 
@@ -91,6 +93,7 @@ class BaseReporter(object):
 
 class StdOutReporter(BaseReporter):
     """Uses `print` to output information about the run; an example reporter class."""
+
     def __init__(self, show_species_detail):
         self.show_species_detail = show_species_detail
         self.generation = None
@@ -117,8 +120,10 @@ class StdOutReporter(BaseReporter):
         ng = len(population)
         ns = len(species_set.species)
         if self.show_species_detail:
-            print('Population of {0:d} members in {1:d} species:'.format(ng, ns))
-            body.append('Population of {0:d} members in {1:d} species:\n'.format(ng, ns))
+            print(
+                'Population of {0:d} members in {1:d} species:'.format(ng, ns))
+            body.append(
+                'Population of {0:d} members in {1:d} species:\n'.format(ng, ns))
             sids = list(iterkeys(species_set.species))
             sids.sort()
             print("   ID   age  size  fitness  adj fit  stag")
@@ -130,15 +135,18 @@ class StdOutReporter(BaseReporter):
                 a = self.generation - s.created
                 n = len(s.members)
                 f = "--" if s.fitness is None else "{:.1f}".format(s.fitness)
-                af = "--" if s.adjusted_fitness is None else "{:.3f}".format(s.adjusted_fitness)
+                af = "--" if s.adjusted_fitness is None else "{:.3f}".format(
+                    s.adjusted_fitness)
                 st = self.generation - s.last_improved
                 print(
                     "  {: >4}  {: >3}  {: >4}  {: >7}  {: >7}  {: >4}".format(sid, a, n, f, af, st))
                 body.append(
                     "  {: >4}  {: >3}  {: >4}  {: >7}  {: >7}  {: >4}\n".format(sid, a, n, f, af, st))
         else:
-            print('Population of {0:d} members in {1:d} species'.format(ng, ns))
-            body.append('Population of {0:d} members in {1:d} species\n'.format(ng, ns))
+            print(
+                'Population of {0:d} members in {1:d} species'.format(ng, ns))
+            body.append(
+                'Population of {0:d} members in {1:d} species\n'.format(ng, ns))
 
         elapsed = time.time() - self.generation_start_time
         self.generation_times.append(elapsed)
@@ -147,8 +155,10 @@ class StdOutReporter(BaseReporter):
         print('Total extinctions: {0:d}'.format(self.num_extinctions))
         body.append('Total extinctions: {0:d}\n'.format(self.num_extinctions))
         if len(self.generation_times) > 1:
-            print("Generation time: {0:.3f} sec ({1:.3f} average)".format(elapsed, average))
-            body.append("Generation time: {0:.3f} sec ({1:.3f} average)\n".format(elapsed, average))
+            print("Generation time: {0:.3f} sec ({1:.3f} average)".format(
+                elapsed, average))
+            body.append(
+                "Generation time: {0:.3f} sec ({1:.3f} average)\n".format(elapsed, average))
         else:
             print("Generation time: {0:.3f} sec".format(elapsed))
             body.append("Generation time: {0:.3f} sec\n".format(elapsed))
@@ -165,18 +175,20 @@ class StdOutReporter(BaseReporter):
         best_species_id = species.get_species_id(best_genome.key)
         with open('fitplot', 'a') as f:
             f.write('{},{},{}\n'.format(fit_mean, fit_std, best_genome.fitness))
-        print('Population\'s average fitness: {0:3.5f} stdev: {1:3.5f}'.format(fit_mean, fit_std))
+        print('Population\'s average fitness: {0:3.5f} stdev: {1:3.5f}'.format(
+            fit_mean, fit_std))
         print(
             'Best fitness: {0:3.5f} - size: {1!r} - species {2} - id {3}'.format(best_genome.fitness,
                                                                                  best_genome.size(),
                                                                                  best_species_id,
                                                                                  best_genome.key))
-        body.append('Population\'s average fitness: {0:3.5f} stdev: {1:3.5f}\n'.format(fit_mean, fit_std))
+        body.append('Population\'s average fitness: {0:3.5f} stdev: {1:3.5f}\n'.format(
+            fit_mean, fit_std))
         body.append(
             'Best fitness: {0:3.5f} - size: {1!r} - species {2} - id {3}\n'.format(best_genome.fitness,
-                                                                                 best_genome.size(),
-                                                                                 best_species_id,
-                                                                                 best_genome.key))
+                                                                                   best_genome.size(),
+                                                                                   best_species_id,
+                                                                                   best_genome.key))
         if body:
             img = plot_fitness_over_gen('fitplot', 'fitplot.png')
             report(body, img)
@@ -191,8 +203,10 @@ class StdOutReporter(BaseReporter):
 
     def species_stagnant(self, sid, species):
         if self.show_species_detail:
-            print("\nSpecies {0} with {1} members is stagnated: removing it".format(sid, len(species.members)))
-            report("\nSpecies {0} with {1} members is stagnated: removing it".format(sid, len(species.members)))
+            print("\nSpecies {0} with {1} members is stagnated: removing it".format(
+                sid, len(species.members)))
+            report("\nSpecies {0} with {1} members is stagnated: removing it".format(
+                sid, len(species.members)))
 
     def info(self, msg):
         print(msg)

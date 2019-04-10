@@ -6,9 +6,9 @@ import random
 import time
 
 try:
-    import cPickle as pickle  # pylint: disable=import-error
+    import cPickle as pickle # pylint: disable=import-error
 except ImportError:
-    import pickle  # pylint: disable=import-error
+    import pickle # pylint: disable=import-error
 
 from neat.population import Population
 from neat.reporting import BaseReporter
@@ -19,13 +19,11 @@ class Checkpointer(BaseReporter):
     A reporter class that performs checkpointing using `pickle`
     to save and restore populations (and other aspects of the simulation state).
     """
-
     def __init__(self, generation_interval=100, time_interval_seconds=300,
                  filename_prefix='neat-checkpoint-'):
         """
         Saves the current state (at the end of a generation) every ``generation_interval`` generations or
         ``time_interval_seconds``, whichever happens first.
-
         :param generation_interval: If not None, maximum number of generations between save intervals
         :type generation_interval: int or None
         :param time_interval_seconds: If not None, maximum number of seconds between checkpoint attempts
@@ -40,8 +38,9 @@ class Checkpointer(BaseReporter):
         self.last_generation_checkpoint = -1
         self.last_time_checkpoint = time.time()
 
-    def start_generation(self, generation):
+    def start_generation(self, generation, config, population, species_set):
         self.current_generation = generation
+
         checkpoint_due = False
 
         if self.time_interval_seconds is not None:
@@ -59,13 +58,12 @@ class Checkpointer(BaseReporter):
             self.last_generation_checkpoint = self.current_generation
             self.last_time_checkpoint = time.time()
 
-
     def end_generation(self, config, population, species_set):
         pass
 
     def save_checkpoint(self, config, population, species_set, generation):
         """ Save the current simulation state. """
-        filename = '{0}{1}'.format(self.filename_prefix, generation)
+        filename = '{0}{1}'.format(self.filename_prefix,generation)
         print("Saving checkpoint to {0}".format(filename))
 
         with gzip.open(filename, 'w', compresslevel=5) as f:
@@ -77,5 +75,19 @@ class Checkpointer(BaseReporter):
         """Resumes the simulation from a previous saved point."""
         with gzip.open(filename) as f:
             generation, config, population, species_set, rndstate = pickle.load(f)
+
+            # Truncates the fitplot data file to the current generation:
+            rebuilt = []
+            with open('fitplot', 'r') as f:
+                lines = f.readlines()
+            for line in lines:
+                if line.startswith(str(generation)):
+                    break
+                else:
+                    rebuilt.append(line)
+            if rebuilt:
+                with open('fitplot', 'w') as f:
+                    f.writelines(rebuilt)
+
             random.setstate(rndstate)
-            return Population(config, (population, species_set, generation))
+            return Population(config, (population, species_set, generation))  
