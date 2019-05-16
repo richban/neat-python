@@ -32,14 +32,18 @@ class DefaultGenomeConfig(object):
                         ConfigParameter('num_outputs', int),
                         ConfigParameter('num_hidden', int),
                         ConfigParameter('feed_forward', bool),
-                        ConfigParameter('compatibility_disjoint_coefficient', float),
-                        ConfigParameter('compatibility_weight_coefficient', float),
+                        ConfigParameter(
+                            'compatibility_disjoint_coefficient', float),
+                        ConfigParameter(
+                            'compatibility_weight_coefficient', float),
                         ConfigParameter('conn_add_prob', float),
                         ConfigParameter('conn_delete_prob', float),
                         ConfigParameter('node_add_prob', float),
                         ConfigParameter('node_delete_prob', float),
-                        ConfigParameter('single_structural_mutation', bool, 'false'),
-                        ConfigParameter('structural_mutation_surer', str, 'default'),
+                        ConfigParameter(
+                            'single_structural_mutation', bool, 'false'),
+                        ConfigParameter(
+                            'structural_mutation_surer', str, 'default'),
                         ConfigParameter('initial_connection', str, 'unconnected')]
 
         # Gather configuration data from the gene classes.
@@ -73,9 +77,9 @@ class DefaultGenomeConfig(object):
 
         # Verify structural_mutation_surer is valid.
         # pylint: disable=access-member-before-definition
-        if self.structural_mutation_surer.lower() in ['1','yes','true','on']:
+        if self.structural_mutation_surer.lower() in ['1', 'yes', 'true', 'on']:
             self.structural_mutation_surer = 'true'
-        elif self.structural_mutation_surer.lower() in ['0','no','false','off']:
+        elif self.structural_mutation_surer.lower() in ['0', 'no', 'false', 'off']:
             self.structural_mutation_surer = 'false'
         elif self.structural_mutation_surer.lower() == 'default':
             self.structural_mutation_surer = 'default'
@@ -100,7 +104,8 @@ class DefaultGenomeConfig(object):
             f.write('initial_connection      = {0} {1}\n'.format(self.initial_connection,
                                                                  self.connection_fraction))
         else:
-            f.write('initial_connection      = {0}\n'.format(self.initial_connection))
+            f.write('initial_connection      = {0}\n'.format(
+                self.initial_connection))
 
         assert self.initial_connection in self.allowed_connectivity
 
@@ -128,6 +133,7 @@ class DefaultGenomeConfig(object):
             error_string = "Invalid structural_mutation_surer {!r}".format(
                 self.structural_mutation_surer)
             raise RuntimeError(error_string)
+
 
 class DefaultGenome(object):
     """
@@ -172,6 +178,9 @@ class DefaultGenome(object):
         # Fitness results.
         self.fitness = None
 
+        # Behavioral Features
+        self.features = None
+
     def configure_new(self, config):
         """Configure a new genome based on the given configuration."""
 
@@ -200,7 +209,7 @@ class DefaultGenome(object):
                         "Warning: initial_connection = fs_neat will not connect to hidden nodes;",
                         "\tif this is desired, set initial_connection = fs_neat_nohidden;",
                         "\tif not, set initial_connection = fs_neat_hidden",
-                        sep='\n', file=sys.stderr);
+                        sep='\n', file=sys.stderr)
                 self.connect_fs_neat_nohidden(config)
         elif 'full' in config.initial_connection:
             if config.initial_connection == 'full_nodirect':
@@ -213,7 +222,7 @@ class DefaultGenome(object):
                         "Warning: initial_connection = full with hidden nodes will not do direct input-output connections;",
                         "\tif this is desired, set initial_connection = full_nodirect;",
                         "\tif not, set initial_connection = full_direct",
-                        sep='\n', file=sys.stderr);
+                        sep='\n', file=sys.stderr)
                 self.connect_full_nodirect(config)
         elif 'partial' in config.initial_connection:
             if config.initial_connection == 'partial_nodirect':
@@ -228,7 +237,7 @@ class DefaultGenome(object):
                             config.connection_fraction),
                         "\tif not, set initial_connection = partial_direct {0}".format(
                             config.connection_fraction),
-                        sep='\n', file=sys.stderr);
+                        sep='\n', file=sys.stderr)
                 self.connect_partial_nodirect(config)
 
     def configure_crossover(self, genome1, genome2, config):
@@ -268,8 +277,8 @@ class DefaultGenome(object):
         """ Mutates this genome. """
 
         if config.single_structural_mutation:
-            div = max(1,(config.node_add_prob + config.node_delete_prob +
-                         config.conn_add_prob + config.conn_delete_prob))
+            div = max(1, (config.node_add_prob + config.node_delete_prob +
+                          config.conn_add_prob + config.conn_delete_prob))
             r = random()
             if r < (config.node_add_prob/div):
                 self.mutate_add_node(config)
@@ -371,7 +380,8 @@ class DefaultGenome(object):
 
     def mutate_delete_node(self, config):
         # Do nothing if there are no non-output nodes.
-        available_nodes = [k for k in iterkeys(self.nodes) if k not in config.output_keys]
+        available_nodes = [k for k in iterkeys(
+            self.nodes) if k not in config.output_keys]
         if not available_nodes:
             return -1
 
@@ -450,7 +460,8 @@ class DefaultGenome(object):
         Returns genome 'complexity', taken to be
         (number of nodes, number of enabled connections)
         """
-        num_enabled_connections = sum([1 for cg in self.connections.values() if cg.enabled])
+        num_enabled_connections = sum(
+            [1 for cg in self.connections.values() if cg.enabled])
         return len(self.nodes), num_enabled_connections
 
     def __str__(self):
@@ -493,7 +504,8 @@ class DefaultGenome(object):
         (FS-NEAT with connections to hidden, if any).
         """
         input_id = choice(config.input_keys)
-        others = [i for i in iterkeys(self.nodes) if i not in config.input_keys]
+        others = [i for i in iterkeys(
+            self.nodes) if i not in config.input_keys]
         for output_id in others:
             connection = self.create_connection(config, input_id, output_id)
             self.connections[connection.key] = connection
@@ -506,7 +518,8 @@ class DefaultGenome(object):
         each hidden node connected to all output nodes.
         (Recurrent genomes will also include node self-connections.)
         """
-        hidden = [i for i in iterkeys(self.nodes) if i not in config.output_keys]
+        hidden = [i for i in iterkeys(
+            self.nodes) if i not in config.output_keys]
         output = [i for i in iterkeys(self.nodes) if i in config.output_keys]
         connections = []
         if hidden:
@@ -527,7 +540,6 @@ class DefaultGenome(object):
                 connections.append((i, i))
 
         return connections
-
 
     def connect_full_nodirect(self, config):
         """
@@ -551,7 +563,8 @@ class DefaultGenome(object):
         assert 0 <= config.connection_fraction <= 1
         all_connections = self.compute_full_connections(config, False)
         shuffle(all_connections)
-        num_to_add = int(round(len(all_connections) * config.connection_fraction))
+        num_to_add = int(round(len(all_connections) *
+                               config.connection_fraction))
         for input_id, output_id in all_connections[:num_to_add]:
             connection = self.create_connection(config, input_id, output_id)
             self.connections[connection.key] = connection
@@ -564,7 +577,8 @@ class DefaultGenome(object):
         assert 0 <= config.connection_fraction <= 1
         all_connections = self.compute_full_connections(config, True)
         shuffle(all_connections)
-        num_to_add = int(round(len(all_connections) * config.connection_fraction))
+        num_to_add = int(round(len(all_connections) *
+                               config.connection_fraction))
         for input_id, output_id in all_connections[:num_to_add]:
             connection = self.create_connection(config, input_id, output_id)
             self.connections[connection.key] = connection
