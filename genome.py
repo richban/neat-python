@@ -180,6 +180,7 @@ class DefaultGenome(object):
 
         # Behavioral Features
         self.features = None
+        self.position = None
 
     def configure_new(self, config):
         """Configure a new genome based on the given configuration."""
